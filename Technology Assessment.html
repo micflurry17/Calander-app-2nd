@@ -13,7 +13,9 @@
   --accent: #7565df;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   font-family: Arial, sans-serif;
@@ -24,6 +26,7 @@ body {
   margin: 0;
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
 }
 
 button, input, select {
@@ -38,6 +41,11 @@ button {
   background: var(--accent);
   color: white;
   cursor: pointer;
+  border: none;
+}
+
+button:hover {
+  filter: brightness(0.9);
 }
 
 #calendar {
@@ -93,10 +101,24 @@ button {
   overflow-wrap: anywhere;
 }
 
+#search {
+  width: 90%;
+  max-width: 450px;
+}
+
 @media (max-width: 520px) {
-  body { padding: 8px; }
-  .day { min-height: 50px; padding: 3px; }
-  .weekday { font-size: 11px; }
+  body {
+    padding: 8px;
+  }
+
+  .day {
+    min-height: 50px;
+    padding: 3px;
+  }
+
+  .weekday {
+    font-size: 11px;
+  }
 }
 </style>
 </head>
@@ -110,6 +132,7 @@ button {
 
 <div id="studio">
   <h2>Theme Studio</h2>
+
   <p>Background colour</p>
   <input type="color" id="bgColor" value="#f4f3fa">
 
@@ -124,17 +147,15 @@ button {
     placeholder="Paste image URL">
 
   <br>
-  <button id="saveTheme">Save Theme</button>
-  <button id="resetTheme">Reset Theme</button>
+  <button type="button" id="saveTheme">Save Theme</button>
+  <button type="button" id="resetTheme">Reset Theme</button>
 </div>
 
 <hr>
 
-<div>
-  <button id="previous">← Previous</button>
-  <strong id="month">Loading calendar...</strong>
-  <button id="next">Next →</button>
-</div>
+<button id="previous">← Previous</button>
+<strong id="month">Loading calendar...</strong>
+<button id="next">Next →</button>
 
 <div id="calendar"></div>
 
@@ -149,6 +170,7 @@ button {
   <input id="taskDate" type="date" required>
 
   <p>Choose an icon</p>
+
   <select id="taskIcon">
     <option value="📝">📝 Notes</option>
     <option value="📚">📚 Study</option>
@@ -161,6 +183,7 @@ button {
   </select>
 
   <p>Urgency level</p>
+
   <select id="urgency">
     <option value="Low">🟢 Low</option>
     <option value="Medium">🟡 Medium</option>
@@ -175,19 +198,22 @@ button {
 </form>
 
 <h2>My Tasks</h2>
+
+<input type="search" id="search"
+  placeholder="🔎 Search your events...">
+
 <div id="tasks"></div>
 
 <script>
 const $ = id => document.getElementById(id);
 
 let current = new Date();
-let tasks = load("calendarTasks", []);
-let theme = load("calendarTheme", null);
 
 function load(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem(key)) || fallback;
-  } catch (e) {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
     return fallback;
   }
 }
@@ -195,10 +221,13 @@ function load(key, fallback) {
 function save(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    alert("Could not save. Try opening the website in Safari.");
+  } catch (error) {
+    alert("Could not save changes. Try Safari or Chrome.");
   }
 }
+
+let tasks = load("calendarTasks", []);
+let theme = load("calendarTheme", null);
 
 function dateKey(date) {
   return date.getFullYear() + "-" +
@@ -237,6 +266,7 @@ function drawCalendar() {
   for (let day = 1; day <= total; day++) {
     const date = dateKey(new Date(year, month, day));
     const box = document.createElement("div");
+
     box.className = "day";
 
     if (date === dateKey(new Date())) {
@@ -247,11 +277,11 @@ function drawCalendar() {
     number.textContent = day;
     box.appendChild(number);
 
-    tasks.filter(t => t.date === date).forEach(task => {
+    tasks.filter(task => task.date === date).forEach(task => {
       const item = document.createElement("div");
       item.className = "task";
-      item.style.backgroundColor = task.color;
-      item.textContent = task.icon + " " + task.name;
+      item.style.backgroundColor = task.color || "#7565df";
+      item.textContent = (task.icon || "📝") + " " + task.name;
       item.title = task.urgency + " urgency";
       box.appendChild(item);
     });
@@ -288,12 +318,13 @@ function addTask(event) {
   });
 
   save("calendarTasks", tasks);
+
   $("taskName").value = "";
   drawCalendar();
 }
 
 function textColour(hex) {
-  const n = parseInt(hex.slice(1), 16);
+  const n = parseInt((hex || "#7565df").slice(1), 16);
   const r = (n >> 16) & 255;
   const g = (n >> 8) & 255;
   const b = n & 255;
@@ -304,28 +335,44 @@ function textColour(hex) {
 
 function showTasks() {
   const list = $("tasks");
+  const query = $("search").value.toLowerCase().trim();
+
   list.innerHTML = "";
 
-  if (tasks.length === 0) {
-    list.textContent = "No tasks yet. Add one above!";
+  const results = tasks
+    .map((task, index) => ({ task, index }))
+    .filter(({ task }) =>
+      task.name.toLowerCase().includes(query) ||
+      task.date.includes(query) ||
+      task.urgency.toLowerCase().includes(query) ||
+      (task.icon || "").includes(query)
+    );
+
+  if (results.length === 0) {
+    list.textContent = query
+      ? "No matching events found."
+      : "No tasks yet. Add one above!";
     return;
   }
 
-  tasks.forEach((task, index) => {
+  results.forEach(({ task, index }) => {
     const item = document.createElement("div");
     item.className = "taskItem";
-    item.style.backgroundColor = task.color;
-    item.style.color = textColour(task.color);
+    item.style.backgroundColor = task.color || "#7565df";
+    item.style.color = textColour(task.color || "#7565df");
 
     const details = document.createElement("span");
+
     details.textContent =
-      task.icon + " " + task.name + " | " +
-      task.date + " | " + task.urgency + " urgency ";
+      (task.icon || "📝") + " " + task.name +
+      " | " + task.date +
+      " | " + task.urgency + " urgency ";
+
     item.appendChild(details);
 
     const colour = document.createElement("input");
     colour.type = "color";
-    colour.value = task.color;
+    colour.value = task.color || "#7565df";
     colour.title = "Change task colour";
 
     colour.addEventListener("input", function() {
@@ -339,6 +386,7 @@ function showTasks() {
     item.appendChild(colour);
 
     const remove = document.createElement("button");
+    remove.type = "button";
     remove.textContent = "Delete";
 
     remove.addEventListener("click", function() {
@@ -353,14 +401,22 @@ function showTasks() {
 }
 
 function applyTheme(t) {
-  document.documentElement.style.setProperty("--bg", t.bg);
-  document.documentElement.style.setProperty("--text", t.text);
-  document.documentElement.style.setProperty("--accent", t.accent);
-
-  $("bgColor").value = t.bg;
-  $("textColor").value = t.text;
-  $("accentColor").value = t.accent;
+  $("bgColor").value = t.bg || "#f4f3fa";
+  $("textColor").value = t.text || "#29263a";
+  $("accentColor").value = t.accent || "#7565df";
   $("wallpaper").value = t.wallpaper || "";
+
+  document.documentElement.style.setProperty(
+    "--bg", t.bg || "#f4f3fa"
+  );
+
+  document.documentElement.style.setProperty(
+    "--text", t.text || "#29263a"
+  );
+
+  document.documentElement.style.setProperty(
+    "--accent", t.accent || "#7565df"
+  );
 
   document.body.style.backgroundImage = t.wallpaper
     ? "url('" + t.wallpaper.replace(/['"\\]/g, "") + "')"
@@ -391,17 +447,25 @@ function resetTheme() {
   applyTheme(theme);
 }
 
-$("studioButton").onclick = function() {
+$("studioButton").addEventListener("click", function() {
   $("studio").style.display =
     $("studio").style.display === "block" ? "none" : "block";
-};
+});
 
-$("saveTheme").onclick = saveTheme;
-$("resetTheme").onclick = resetTheme;
+$("saveTheme").addEventListener("click", saveTheme);
+$("resetTheme").addEventListener("click", resetTheme);
 
-$("previous").onclick = () => changeMonth(-1);
-$("next").onclick = () => changeMonth(1);
-$("taskForm").onsubmit = addTask;
+$("previous").addEventListener("click", function() {
+  changeMonth(-1);
+});
+
+$("next").addEventListener("click", function() {
+  changeMonth(1);
+});
+
+$("taskForm").addEventListener("submit", addTask);
+
+$("search").addEventListener("input", showTasks);
 
 if (theme) {
   applyTheme(theme);

@@ -1,105 +1,194 @@
+
 <!DOCTYPE html>
-
-<html>
-
+<html lang="en">
 <head>
-
-<title>Calander</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Calendar</title>
 
 <style>
-
-body {
-
-  font-family: Arial;
-
-  background: #f4f3fa;
-
-  text-align: center;
-
-  padding: 20px;
-
+:root {
+  --bg: #f4f3fa;
+  --text: #29263a;
+  --accent: #7565df;
 }
 
-h1 { color: #7565df; }
+body {
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+  background-size: cover;
+  background-position: center;
+}
 
-button, input {
-
+button, input, select {
   padding: 10px;
-
   margin: 5px;
-
   border: 1px solid #ddd;
+  border-radius: 7px;
+  font: inherit;
+}
 
-  border-radius: 6px;
-
+button {
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
 }
 
 #calendar {
-
   display: grid;
-
-  grid-template-columns: repeat(7, 1fr);
-
-  max-width: 700px;
-
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  max-width: 800px;
   margin: 20px auto;
+}
 
+.weekday {
+  padding: 8px 2px;
+  font-weight: bold;
 }
 
 .day {
-
   background: white;
-
+  color: #29263a;
   border: 1px solid #ddd;
-
   min-height: 65px;
-
   padding: 5px;
-
-  cursor: pointer;
-
+  overflow-wrap: anywhere;
 }
 
-.today { background: #ded8ff; }
+.today {
+  outline: 3px solid var(--accent);
+}
 
-.event {
-    background: #7565df;
+.task {
   color: white;
   font-size: 11px;
   margin-top: 5px;
-  padding: 3px;
+  padding: 4px;
+  border-radius: 4px;
   overflow-wrap: anywhere;
+}
+
+#studio {
+  display: none;
+  background: white;
+  color: #29263a;
+  padding: 15px;
+  margin: 20px auto;
+  max-width: 500px;
+  border-radius: 12px;
+}
+
+.taskItem {
+  padding: 10px;
+  margin: 8px;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  body { padding: 10px; }
+  .day { min-height: 50px; padding: 3px; }
 }
 </style>
 </head>
 
 <body>
 
-<h1>Calander</h1>
-<p>Your simple calendar app</p>
+<h1>My Calendar 📅</h1>
+<p>Your calendar, your style.</p>
 
-<button onclick="changeMonth(-1)">Previous</button>
-<span id="month"></span>
-<button onclick="changeMonth(1)">Next</button>
+<button id="studioButton">🎨 Theme Studio</button>
+
+<div id="studio">
+  <h2>Theme Studio</h2>
+
+  <p>Background colour</p>
+  <input type="color" id="bgColor" value="#f4f3fa">
+
+  <p>Text colour</p>
+  <input type="color" id="textColor" value="#29263a">
+
+  <p>Button colour</p>
+  <input type="color" id="accentColor" value="#7565df">
+
+  <p>Wallpaper image URL</p>
+  <input id="wallpaper" placeholder="Paste image URL">
+
+  <br>
+  <button id="saveTheme">Save Theme</button>
+  <button id="resetTheme">Reset Theme</button>
+</div>
+
+<hr>
+
+<button id="previous">Previous</button>
+<strong id="month"></strong>
+<button id="next">Next</button>
 
 <div id="calendar"></div>
 
-<h3>Add an Event</h3>
-<input id="eventName" placeholder="Event name">
-<input id="eventDate" type="date">
-<button onclick="addEvent()">Add Event</button>
+<hr>
 
-<h3>Upcoming Events</h3>
-<div id="events"></div>
+<h2>Add a Task</h2>
+
+<form id="taskForm">
+  <input id="taskName" placeholder="Task name" required>
+  <input id="taskDate" type="date" required>
+
+  <p>Choose an icon</p>
+  <select id="taskIcon">
+    <option value="📝">📝 Notes</option>
+    <option value="📚">📚 Study</option>
+    <option value="🎮">🎮 Gaming</option>
+    <option value="🏃">🏃 Exercise</option>
+    <option value="🎂">🎂 Birthday</option>
+    <option value="⭐">⭐ Important</option>
+    <option value="💼">💼 Work</option>
+    <option value="🏠">🏠 Home</option>
+  </select>
+
+  <p>Urgency level</p>
+  <select id="urgency">
+    <option value="Low">🟢 Low</option>
+    <option value="Medium">🟡 Medium</option>
+    <option value="High">🔴 High</option>
+  </select>
+
+  <p>Task colour</p>
+  <input type="color" id="taskColor" value="#7565df">
+
+  <br>
+  <button type="submit">Add Task</button>
+</form>
+
+<h2>My Tasks</h2>
+<div id="tasks"></div>
 
 <script>
 let current = new Date();
-let events = JSON.parse(localStorage.getItem("events") || "[]");
+
+function loadData(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+let tasks = loadData("tasks", []);
+
+function saveTasks() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
 
 function dateKey(date) {
   return date.getFullYear() + "-" +
-    String(date.getMonth()+1).padStart(2,"0") + "-" +
-    String(date.getDate()).padStart(2,"0");
+    String(date.getMonth() + 1).padStart(2, "0") + "-" +
+    String(date.getDate()).padStart(2, "0");
 }
 
 function drawCalendar() {
@@ -108,74 +197,215 @@ function drawCalendar() {
 
   document.getElementById("month").textContent =
     current.toLocaleDateString("en-AU", {
-      month: "long", year: "numeric"
+      month: "long",
+      year: "numeric"
     });
 
   let calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
 
-  ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(day => {
-    calendar.innerHTML += "<div><b>" + day + "</b></div>";
-  });
+  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    .forEach(day => {
+      let heading = document.createElement("div");
+      heading.className = "weekday";
+      heading.textContent = day;
+      calendar.appendChild(heading);
+    });
 
   let first = new Date(year, month, 1).getDay();
-  let days = new Date(year, month+1, 0).getDate();
+  let total = new Date(year, month + 1, 0).getDate();
 
   for (let i = 0; i < first; i++) {
-    calendar.innerHTML += "<div></div>";
+    calendar.appendChild(document.createElement("div"));
   }
 
-  for (let day = 1; day <= days; day++) {
+  for (let day = 1; day <= total; day++) {
     let date = dateKey(new Date(year, month, day));
     let box = document.createElement("div");
-
     box.className = "day";
+
     if (date === dateKey(new Date())) {
       box.classList.add("today");
     }
 
-    box.textContent = day;
+    let number = document.createElement("strong");
+    number.textContent = day;
+    box.appendChild(number);
 
-    events.filter(e => e.date === date).forEach(e => {
-      let event = document.createElement("div");
-      event.className = "event";
-      event.textContent = e.name;
-      box.appendChild(event);
+    tasks.filter(task => task.date === date).forEach(task => {
+      let item = document.createElement("div");
+      item.className = "task";
+      item.style.backgroundColor = task.color;
+      item.textContent = task.icon + " " + task.name;
+      item.title = task.urgency + " urgency";
+      box.appendChild(item);
     });
 
     calendar.appendChild(box);
   }
 
-  showEvents();
+  showTasks();
 }
 
 function changeMonth(amount) {
+  current.setDate(1);
   current.setMonth(current.getMonth() + amount);
   drawCalendar();
 }
-function showEvents() {
-  let list = document.getElementById("events");
+
+function addTask(event) {
+  event.preventDefault();
+
+  let name = document.getElementById("taskName").value.trim();
+  let date = document.getElementById("taskDate").value;
+
+  if (!name || !date) {
+    alert("Enter a task and date!");
+    return;
+  }
+
+  tasks.push({
+    name: name,
+    date: date,
+    icon: document.getElementById("taskIcon").value,
+    urgency: document.getElementById("urgency").value,
+    color: document.getElementById("taskColor").value
+  });
+
+  saveTasks();
+  document.getElementById("taskName").value = "";
+  drawCalendar();
+}
+
+function showTasks() {
+  let list = document.getElementById("tasks");
   list.innerHTML = "";
 
-  events.forEach((event, index) => {
-    let item = document. createElement("p");
-    item.textContent = event.date + " - " +event.name + " ";
-    let remove = document. createElement("button");
-    remove.textContent = "Delete";
-    Remove.onclick = function() {
-      events.splice(index, 1);
-      localStorage.setItem("events", JSON.stringify(events));
-      drawCalander();
-    };
+  if (tasks.length === 0) {
+    list.textContent = "No tasks yet. Add one above!";
+    return;
+  }
 
+  tasks.forEach((task, index) => {
+    let item = document.createElement("div");
+    item.className = "taskItem";
+    item.style.backgroundColor = task.color;
+    item.style.color = textColour(task.color);
+
+    let details = document.createElement("span");
+    details.textContent =
+      task.icon + " " + task.name + " | " +
+      task.date + " | " + task.urgency + " urgency ";
+    item.appendChild(details);
+
+    let colour = document.createElement("input");
+    colour.type = "color";
+    colour.value = task.color;
+    colour.title = "Change task colour";
+
+    colour.oninput = function() {
+      tasks[index].color = colour.value;
+      item.style.backgroundColor = colour.value;
+      item.style.color = textColour(colour.value);
+      saveTasks();
+      drawCalendar();
+    };
+    item.appendChild(colour);
+
+    let remove = document.createElement("button");
+    remove.textContent = "Delete";
+
+    remove.onclick = function() {
+      tasks.splice(index, 1);
+      saveTasks();
+      drawCalendar();
+    };
     item.appendChild(remove);
+
     list.appendChild(item);
   });
 }
 
-drawCalender();
+function textColour(hex) {
+  let number = parseInt(hex.slice(1), 16);
+  let r = (number >> 16) & 255;
+  let g = (number >> 8) & 255;
+  let b = number & 255;
+
+  return (r * 299 + g * 587 + b * 114) / 1000 > 145
+    ? "#222222" : "#ffffff";
+}
+
+function applyTheme(theme) {
+  document.documentElement.style.setProperty("--bg", theme.bg);
+  document.documentElement.style.setProperty("--text", theme.text);
+  document.documentElement.style.setProperty("--accent", theme.accent);
+
+  document.body.style.backgroundImage = theme.wallpaper
+    ? "url('" + theme.wallpaper.replace(/['\"\\]/g, "") + "')"
+    : "none";
+}
+
+function saveTheme() {
+  let theme = {
+    bg: document.getElementById("bgColor").value,
+    text: document.getElementById("textColor").value,
+    accent: document.getElementById("accentColor").value,
+    wallpaper: document.getElementById("wallpaper").value.trim()
+  };
+
+  localStorage.setItem("theme", JSON.stringify(theme));
+  applyTheme(theme);
+}
+
+function resetTheme() {
+  let theme = {
+    bg: "#f4f3fa",
+    text: "#29263a",
+    accent: "#7565df",
+    wallpaper: ""
+  };
+
+  document.getElementById("bgColor").value = theme.bg;
+  document.getElementById("textColor").value = theme.text;
+  document.getElementById("accentColor").value = theme.accent;
+  document.getElementById("wallpaper").value = "";
+
+  localStorage.setItem("theme", JSON.stringify(theme));
+  applyTheme(theme);
+}
+
+document.getElementById("studioButton").onclick = function() {
+  let studio = document.getElementById("studio");
+  studio.style.display =
+    studio.style.display === "block" ? "none" : "block";
+};
+
+document.getElementById("saveTheme").onclick = saveTheme;
+document.getElementById("resetTheme").onclick = resetTheme;
+
+document.getElementById("previous").onclick = function() {
+  changeMonth(-1);
+};
+
+document.getElementById("next").onclick = function() {
+  changeMonth(1);
+};
+
+document.getElementById("taskForm").onsubmit = addTask;
+
+let theme = loadData("theme", null);
+
+if (theme) {
+  document.getElementById("bgColor").value = theme.bg;
+  document.getElementById("textColor").value = theme.text;
+  document.getElementById("accentColor").value = theme.accent;
+  document.getElementById("wallpaper").value = theme.wallpaper;
+  applyTheme(theme);
+}
+
+drawCalendar();
 </script>
 
 </body>
 </html>
-  

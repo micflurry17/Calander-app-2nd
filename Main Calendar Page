@@ -128,6 +128,8 @@ button:hover {
 <h1>My Calendar 📅</h1>
 <p>Your calendar, your style.</p>
 
+<a href="theme.html">Theme Studio</a>
+
 <button id="studioButton">🎨 Theme Studio</button>
 
 <div id="studio">

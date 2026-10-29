@@ -1,489 +1,473 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Calendar</title>
-
+<title>Daylight Planner</title>
 <style>
 :root {
-  --bg: #f4f3fa;
-  --text: #29263a;
-  --accent: #7565df;
+  --bg:#f4f2fb; --card:#fff; --text:#242238;
+  --muted:#858198; --accent:#7966df; --soft:#eeeaff;
+  --border:#e9e5f2; --radius:22px;
 }
-
-* {
-  box-sizing: border-box;
-}
-
+* { box-sizing:border-box }
 body {
-  font-family: Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  text-align: center;
-  padding: 15px;
-  margin: 0;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+  margin:0; min-height:100vh; color:var(--text);
+  background:var(--bg); background-size:cover;
+  background-position:center; background-attachment:fixed;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  letter-spacing:-.01em; transition:.2s;
 }
-
-button, input, select {
-  padding: 10px;
-  margin: 5px;
-  border: 1px solid #ddd;
-  border-radius: 7px;
-  font: inherit;
+button,input,select,textarea { font:inherit }
+button { cursor:pointer }
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible {
+  outline:3px solid var(--accent); outline-offset:2px;
 }
-
-button {
-  background: var(--accent);
-  color: white;
-  cursor: pointer;
-  border: none;
+.app { max-width:1350px; margin:auto; padding:25px }
+header { display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; margin-bottom:25px }
+.brand { display:flex; align-items:center; gap:13px }
+.logo {
+  width:49px;height:49px;display:grid;place-items:center;
+  background:var(--accent);color:white;border-radius:17px;font-size:24px;
+  box-shadow:0 8px 20px #7966df30
 }
-
-button:hover {
-  filter: brightness(0.9);
+h1 { margin:0;font-size:clamp(25px,3vw,34px);letter-spacing:-1.4px }
+.subtitle { color:var(--muted);font-size:13px;margin-top:5px }
+.top-actions,.month-nav,.filters,.actions { display:flex;gap:8px;align-items:center;flex-wrap:wrap }
+.btn {
+  border:1px solid var(--border);border-radius:13px;padding:10px 14px;
+  background:var(--card);color:var(--text);transition:.16s;
 }
-
-#calendar {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  max-width: 850px;
-  margin: 20px auto;
-  gap: 2px;
+.btn:hover { transform:translateY(-1px);border-color:var(--accent) }
+.btn.primary { background:var(--accent);color:white;border-color:var(--accent);font-weight:700 }
+.layout { display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.9fr);gap:22px;align-items:start }
+.panel {
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px;
+  box-shadow:0 12px 34px #30205b0b;backdrop-filter:blur(12px);
 }
-
-.weekday {
-  padding: 8px 2px;
-  font-weight: bold;
-}
-
+.right-column { display:grid;gap:22px }
+.heading { display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px }
+.heading h2 { font-size:18px;margin:0;letter-spacing:-.5px }
+.month-label { min-width:140px;text-align:center;font-weight:750 }
+.weekdays,.calendar-grid { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px }
+.weekdays { margin-bottom:8px }
+.weekdays div { text-align:center;color:var(--muted);font-size:10px;font-weight:800;padding:7px 0;text-transform:uppercase;letter-spacing:.7px }
 .day {
-  background: white;
-  color: #29263a;
-  border: 1px solid #ddd;
-  min-height: 65px;
-  padding: 5px;
-  text-align: left;
-  overflow-wrap: anywhere;
+  min-height:75px;border:1px solid transparent;border-radius:14px;
+  background:color-mix(in srgb,var(--card) 80%,var(--bg));
+  color:var(--text);padding:7px;display:flex;flex-direction:column;
+  justify-content:space-between;gap:5px;text-align:left;transition:.15s;
 }
-
-.today {
-  outline: 3px solid var(--accent);
+.day:hover { border-color:var(--accent);transform:translateY(-1px) }
+.day.other { opacity:.35 }
+.day.today .day-number { background:var(--soft);color:var(--accent) }
+.day.selected { background:var(--accent);color:white;border-color:var(--accent) }
+.day.selected .day-number { color:white;background:transparent }
+.day-number { font-size:13px;font-weight:800;width:26px;height:26px;display:grid;place-items:center;border-radius:9px }
+.day-count { font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
+.day.selected .day-count { color:#ffffffd9 }
+.calendar-footer { display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px }
+.muted { color:var(--muted);font-size:12px }
+.dot { display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:5px }
+.date-title { font-size:21px!important;letter-spacing:-.7px }
+.search { width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);margin-bottom:12px }
+.filter { border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:99px;padding:7px 11px;font-size:11px }
+.filter.active { background:var(--soft);color:var(--accent);border-color:transparent;font-weight:750 }
+.task-list { display:grid;gap:10px }
+.task { display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;border:1px solid var(--border);border-radius:16px;padding:13px;background:var(--card) }
+.task-check { width:18px;height:18px;margin-top:3px;accent-color:var(--accent) }
+.task-icon { width:37px;height:37px;display:grid;place-items:center;border-radius:12px;font-size:18px }
+.task-main { min-width:0 }
+.task-title { font-size:13px;font-weight:750;line-height:1.5;overflow-wrap:anywhere }
+.task.done .task-title { text-decoration:line-through;color:var(--muted) }
+.task-meta { display:flex;flex-wrap:wrap;gap:5px;margin-top:7px }
+.pill { padding:4px 8px;border-radius:99px;background:var(--bg);color:var(--muted);font-size:10px;font-weight:700 }
+.task-notes { color:var(--muted);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:7px }
+.small-btn { border:0;background:transparent;color:var(--muted);padding:6px;border-radius:8px }
+.small-btn:hover { background:var(--bg);color:var(--text) }
+.empty { padding:25px 12px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:15px }
+.progress-wrap { margin-top:19px }
+.progress-label { display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-bottom:8px }
+.progress { height:7px;border-radius:99px;background:var(--bg);overflow:hidden }
+.progress-fill { height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .2s }
+.settings-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px }
+.field { display:grid;gap:7px;min-width:0 }
+.field.full { grid-column:1/-1 }
+.field label { color:var(--muted);font-size:11px;font-weight:750 }
+.field input:not([type=color]):not([type=checkbox]),.field select,.field textarea {
+  width:100%;min-width:0;padding:10px 11px;border:1px solid var(--border);
+  border-radius:11px;background:var(--card);color:var(--text)
 }
-
-.task {
-  color: white;
-  font-size: 11px;
-  margin-top: 5px;
-  padding: 4px;
-  border-radius: 4px;
-  overflow-wrap: anywhere;
-}
-
-#studio {
-  display: none;
-  background: white;
-  color: #29263a;
-  padding: 15px;
-  margin: 20px auto;
-  max-width: 500px;
-  border-radius: 12px;
-}
-
-.taskItem {
-  padding: 10px;
-  margin: 8px;
-  border-radius: 8px;
-  overflow-wrap: anywhere;
-}
-
-#search {
-  width: 90%;
-  max-width: 450px;
-}
-
-@media (max-width: 520px) {
-  body {
-    padding: 8px;
-  }
-
-  .day {
-    min-height: 50px;
-    padding: 3px;
-  }
-
-  .weekday {
-    font-size: 11px;
-  }
+.field input[type=color] { width:100%;height:40px;padding:4px;border:1px solid var(--border);border-radius:10px;background:var(--card) }
+.field input[type=range] { width:100%;accent-color:var(--accent) }
+.field textarea { min-height:75px;resize:vertical }
+.settings-section { border-top:1px solid var(--border);padding-top:16px;margin-top:17px }
+.settings-section h3 { font-size:13px;margin:0 0 12px }
+.settings-actions { display:flex;flex-wrap:wrap;gap:8px;margin-top:14px }
+.toggle-row { display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px }
+.toggle-row input { width:18px;height:18px;accent-color:var(--accent) }
+.footer { text-align:center;color:var(--muted);font-size:11px;padding:23px 0 5px }
+.hidden { display:none!important }
+dialog { width:min(570px,calc(100% - 24px));max-height:90vh;overflow:auto;padding:0;border:1px solid var(--border);border-radius:22px;background:var(--card);color:var(--text);box-shadow:0 24px 90px #0003 }
+dialog::backdrop { background:#201a3480;backdrop-filter:blur(5px) }
+.dialog-head { display:flex;justify-content:space-between;align-items:center;padding:19px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:2 }
+.dialog-head h2 { font-size:18px;margin:0 }
+.dialog-body { padding:22px }
+.dialog-actions { display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:20px }
+.toast { display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--card);padding:12px 17px;border-radius:12px;font-size:13px;z-index:20;max-width:90vw }
+@media(max-width:850px) { .layout { grid-template-columns:1fr } }
+@media(max-width:520px) {
+  .app { padding:12px }.panel { padding:15px }.top-actions { width:100% }
+  .top-actions .btn { flex:1 }.day { min-height:58px;padding:5px;border-radius:10px }
+  .weekdays,.calendar-grid { gap:4px }.day-count { font-size:9px }
+  .month-label { min-width:105px;font-size:14px }.settings-grid { grid-template-columns:1fr }
+  .field.full { grid-column:auto }.task { padding:10px;gap:8px }
 }
 </style>
 </head>
-
 <body>
+<div class="app">
+<header>
+  <div class="brand">
+    <div class="logo" id="brandLogo">✦</div>
+    <div><h1 id="appTitle">Daylight Planner</h1><div class="subtitle" id="subtitle">A little more organised, every day.</div></div>
+  </div>
+  <div class="top-actions">
+    <button class="btn" id="todayBtn">Today</button>
+    <button class="btn" id="settingsBtn">⚙ Customise</button>
+    <button class="btn primary" id="addTaskBtn">＋ Add task</button>
+  </div>
+</header>
 
-<h1>My Calendar 📅</h1>
-<p>Your calendar, your style.</p>
+<main class="layout">
+<section class="panel">
+  <div class="heading">
+    <h2>Calendar</h2>
+    <div class="month-nav">
+      <button class="btn" id="prevMonth" aria-label="Previous month">‹</button>
+      <span class="month-label" id="monthLabel"></span>
+      <button class="btn" id="nextMonth" aria-label="Next month">›</button>
+    </div>
+  </div>
+  <div class="weekdays"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+  <div class="calendar-grid" id="calendarGrid"></div>
+  <div class="calendar-footer">
+    <span class="muted"><i class="dot"></i><span id="taskCountLabel">0 tasks</span></span>
+    <button class="btn" id="clearCompletedBtn">Clear completed</button>
+  </div>
+</section>
 
-<a href="theme.html">Theme Studio</a>
+<div class="right-column">
+<section class="panel">
+  <div class="heading">
+    <div><h2 class="date-title" id="selectedDateTitle">Your day</h2><div class="subtitle" id="selectedDateSubtitle">Make today count.</div></div>
+    <button class="btn" id="addSelectedBtn">＋</button>
+  </div>
+  <input class="search" id="searchInput" type="search" placeholder="Search tasks…">
+  <div class="filters" id="filters">
+    <button class="filter active" data-filter="day">Selected day</button>
+    <button class="filter" data-filter="all">All</button>
+    <button class="filter" data-filter="today">Today</button>
+    <button class="filter" data-filter="upcoming">Upcoming</button>
+    <button class="filter" data-filter="completed">Completed</button>
+  </div>
+  <div class="task-list" id="taskList"></div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Daily progress</span><span id="progressText">0 of 0 complete</span></div>
+    <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+</section>
 
-<button id="studioButton">🎨 Theme Studio</button>
-
-<div id="studio">
-  <h2>Theme Studio</h2>
-
-  <p>Background colour</p>
-  <input type="color" id="bgColor" value="#f4f3fa">
-
-  <p>Text colour</p>
-  <input type="color" id="textColor" value="#29263a">
-
-  <p>Button colour</p>
-  <input type="color" id="accentColor" value="#7565df">
-
-  <p>Wallpaper image URL</p>
-  <input id="wallpaper" type="url"
-    placeholder="Paste image URL">
-
-  <br>
-  <button type="button" id="saveTheme">Save Theme</button>
-  <button type="button" id="resetTheme">Reset Theme</button>
+<section class="panel">
+  <div class="heading"><h2>Quick customise</h2><span class="muted">Make it yours</span></div>
+  <div class="settings-grid">
+    <div class="field"><label for="quickAccent">Accent colour</label><input id="quickAccent" type="color" value="#7966df"></div>
+    <div class="field"><label for="quickBg">Background colour</label><input id="quickBg" type="color" value="#f4f2fb"></div>
+    <div class="field full"><label for="quickWallpaper">Wallpaper image URL</label><input id="quickWallpaper" placeholder="https://example.com/image.jpg"></div>
+  </div>
+  <div class="settings-actions"><button class="btn" id="openFullSettings">More settings</button><button class="btn" id="resetThemeBtn">Reset appearance</button></div>
+</section>
+</div>
+</main>
+<div class="footer">Saved in this browser on this device · Export a backup to move your data.</div>
 </div>
 
-<hr>
-
-<button id="previous">← Previous</button>
-<strong id="month">Loading calendar...</strong>
-<button id="next">Next →</button>
-
-<div id="calendar"></div>
-
-<hr>
-
-<h2>Add a Task</h2>
-
+<dialog id="taskDialog">
 <form id="taskForm">
-  <input id="taskName"
-    placeholder="Task name" required>
-
-  <input id="taskDate" type="date" required>
-
-
-  <h2>Add a Event</h2>
-
-  <form id="EventForm">
-  <input id="eventName"
-    placeholder="Event name" required>
-
-  <input id="eventDate" type="date" required>
-
-  <p>Choose an icon</p>
-
-  <select id="taskIcon">
-    <option value="📝">📝 Notes</option>
-    <option value="📚">📚 Study</option>
-    <option value="🎮">🎮 Gaming</option>
-    <option value="🏃">🏃 Exercise</option>
-    <option value="🎂">🎂 Birthday</option>
-    <option value="⭐">⭐ Important</option>
-    <option value="💼">💼 Work</option>
-    <option value="🏠">🏠 Home</option>
-  </select>
-
-  <p>Urgency level</p>
-
-  <select id="urgency">
-    <option value="Low">🟢 Low</option>
-    <option value="Medium">🟡 Medium</option>
-    <option value="High">🔴 High</option>
-    <option value="Extremely Important">🔴 Extremely important</option> 
-  </select>
-
-  <p>Task colour</p>
-  <input type="color" id="taskColor" value="#7565df">
-
-  <br>
-  <button type="submit">Add Task</button>
+  <div class="dialog-head"><h2 id="taskDialogTitle">Add a task</h2><button type="button" class="small-btn" id="closeTaskDialog">✕</button></div>
+  <div class="dialog-body">
+    <input type="hidden" id="taskId">
+    <div class="settings-grid">
+      <div class="field full"><label for="taskTitle">Task name *</label><input id="taskTitle" required maxlength="120" placeholder="Finish science homework"></div>
+      <div class="field"><label for="taskDate">Date *</label><input id="taskDate" type="date" required></div>
+      <div class="field"><label for="taskTime">Time (optional)</label><input id="taskTime" type="time"></div>
+      <div class="field"><label for="taskCategory">Category</label><select id="taskCategory"><option>Personal</option><option>School</option><option>Work</option><option>Health</option><option>Hobby</option><option>Other</option></select></div>
+      <div class="field"><label for="taskPriority">Priority</label><select id="taskPriority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
+      <div class="field"><label for="taskIcon">Emoji / icon</label><input id="taskIcon" maxlength="8" value="✦"></div>
+      <div class="field"><label for="taskColor">Task colour</label><input id="taskColor" type="color" value="#7966df"></div>
+      <div class="field full"><label for="taskNotes">Notes (optional)</label><textarea id="taskNotes" maxlength="1000" placeholder="Add details or reminders…"></textarea></div>
+    </div>
+    <div class="dialog-actions"><button type="button" class="btn" id="cancelTaskBtn">Cancel</button><button type="submit" class="btn primary">Save task</button></div>
+  </div>
 </form>
+</dialog>
 
-<h2>My Events/Tasks</h2>
-
-<input type="search" id="search"
-  placeholder="🔎 Search your events/tasks...">
-
-<div id="tasks"></div>
+<dialog id="settingsDialog">
+<div class="dialog-head"><h2>Customise your planner</h2><button class="small-btn" id="closeSettingsDialog">✕</button></div>
+<div class="dialog-body">
+  <div class="settings-grid">
+    <div class="field full"><label for="settingTitle">Planner name</label><input id="settingTitle" maxlength="50"></div>
+    <div class="field full"><label for="settingSubtitle">Subtitle</label><input id="settingSubtitle" maxlength="100"></div>
+    <div class="field"><label for="settingLogo">Logo emoji</label><input id="settingLogo" maxlength="8"></div>
+    <div class="field"><label for="settingFont">Font style</label><select id="settingFont"><option value="system">Modern system</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Courier New', monospace">Monospace</option></select></div>
+    <div class="field"><label for="settingBg">Background colour</label><input id="settingBg" type="color"></div>
+    <div class="field"><label for="settingCard">Card colour</label><input id="settingCard" type="color"></div>
+    <div class="field"><label for="settingText">Text colour</label><input id="settingText" type="color"></div>
+    <div class="field"><label for="settingMuted">Muted text colour</label><input id="settingMuted" type="color"></div>
+    <div class="field"><label for="settingAccent">Accent colour</label><input id="settingAccent" type="color"></div>
+    <div class="field"><label for="settingBorder">Border colour</label><input id="settingBorder" type="color"></div>
+    <div class="field"><label for="settingRadius">Card roundness</label><input id="settingRadius" type="range" min="8" max="34"><span class="muted" id="radiusValue">22px</span></div>
+    <div class="field"><label for="settingWallpaper">Wallpaper URL</label><input id="settingWallpaper" placeholder="https://example.com/image.jpg"></div>
+    <div class="field full"><label for="settingOverlay">Wallpaper overlay strength</label><input id="settingOverlay" type="range" min="0" max="90"><span class="muted" id="overlayValue">0%</span></div>
+    <div class="field full"><div class="toggle-row"><span>Show card shadows</span><input id="settingShadow" type="checkbox" checked></div></div>
+  </div>
+  <div class="settings-section">
+    <h3>Data and backup</h3>
+    <p class="muted">Export tasks and appearance as a JSON backup, or import a previous backup. Data is stored in this browser and is not automatically synced between devices.</p>
+    <div class="settings-actions">
+      <button class="btn" id="exportBtn">Export backup</button>
+      <button class="btn" id="importBtn">Import backup</button>
+      <input class="hidden" type="file" id="importFile" accept=".json,application/json">
+      <button class="btn" id="exportCsvBtn">Export tasks CSV</button>
+    </div>
+  </div>
+  <div class="dialog-actions"><button class="btn" id="resetAllSettingsBtn">Reset appearance</button><button class="btn primary" id="saveSettingsBtn">Save customisation</button></div>
+</div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
 
 <script>
+(() => {
 const $ = id => document.getElementById(id);
+const now = new Date();
+const keyDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const parseDate = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const defaults = {
+ title:'Daylight Planner',subtitle:'A little more organised, every day.',logo:'✦',
+ bg:'#f4f2fb',card:'#ffffff',text:'#242238',muted:'#858198',
+ accent:'#7966df',border:'#e9e5f2',radius:22,wallpaper:'',overlay:0,
+ shadow:true,font:'system'
+};
+let tasks=[],theme={...defaults},selectedDate=keyDate(now);
+let month=new Date(now.getFullYear(),now.getMonth(),1),filter='day',toastTimer;
 
-let current = new Date();
+try {
+ const saved=JSON.parse(localStorage.getItem('daylightPlannerTasks')||'[]');
+ if(Array.isArray(saved)) tasks=saved;
+ const savedTheme=JSON.parse(localStorage.getItem('daylightPlannerTheme')||'null');
+ if(savedTheme&&typeof savedTheme==='object') theme={...defaults,...savedTheme};
+} catch(e) {}
 
-function load(key, fallback) {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch (error) {
-    return fallback;
-  }
+function saveTasks(){try{localStorage.setItem('daylightPlannerTasks',JSON.stringify(tasks));}catch(e){notify('Could not save. Please export a backup.');}}
+function saveTheme(){try{localStorage.setItem('daylightPlannerTheme',JSON.stringify(theme));}catch(e){notify('Could not save appearance settings.');}}
+function notify(message){
+ const t=$('toast');t.textContent=message;t.style.display='block';
+ clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',2600);
 }
-
-function save(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    alert("Could not save changes. Try Safari or Chrome.");
-  }
+function mix(a,b,r){
+ const rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+ const x=rgb(a),y=rgb(b);
+ return '#'+x.map((v,i)=>Math.round(v*(1-r)+y[i]*r).toString(16).padStart(2,'0')).join('');
 }
-
-let tasks = load("calendarTasks", []);
-let theme = load("calendarTheme", null);
-
-function dateKey(date) {
-  return date.getFullYear() + "-" +
-    String(date.getMonth() + 1).padStart(2, "0") + "-" +
-    String(date.getDate()).padStart(2, "0");
+function applyTheme(){
+ const r=document.documentElement;
+ r.style.setProperty('--bg',theme.bg);r.style.setProperty('--card',theme.card);
+ r.style.setProperty('--text',theme.text);r.style.setProperty('--muted',theme.muted);
+ r.style.setProperty('--accent',theme.accent);r.style.setProperty('--soft',mix(theme.accent,theme.card,.13));
+ r.style.setProperty('--border',theme.border);r.style.setProperty('--radius',theme.radius+'px');
+ document.querySelectorAll('.panel').forEach(p=>p.style.boxShadow=theme.shadow?'0 12px 34px #30205b0b':'none');
+ document.body.style.fontFamily=theme.font==='system'?'Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif':theme.font;
+ const wallpaper=theme.wallpaper.trim();
+ document.body.style.backgroundImage=wallpaper
+   ?`linear-gradient(rgba(255,255,255,${Number(theme.overlay||0)/100}),rgba(255,255,255,${Number(theme.overlay||0)/100})),url("${wallpaper.replace(/["\\]/g,'')}")`:'none';
+ $('appTitle').textContent=theme.title;$('subtitle').textContent=theme.subtitle;
+ $('brandLogo').textContent=theme.logo||'✦';
+ $('quickAccent').value=theme.accent;$('quickBg').value=theme.bg;
+ $('quickWallpaper').value=theme.wallpaper||'';
 }
-
-function drawCalendar() {
-  const year = current.getFullYear();
-  const month = current.getMonth();
-
-  $("month").textContent =
-    current.toLocaleDateString("en-AU", {
-      month: "long",
-      year: "numeric"
-    });
-
-  const calendar = $("calendar");
-  calendar.innerHTML = "";
-
-  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-    .forEach(day => {
-      const heading = document.createElement("div");
-      heading.className = "weekday";
-      heading.textContent = day;
-      calendar.appendChild(heading);
-    });
-
-  const first = new Date(year, month, 1).getDay();
-  const total = new Date(year, month + 1, 0).getDate();
-
-  for (let i = 0; i < first; i++) {
-    calendar.appendChild(document.createElement("div"));
-  }
-
-  for (let day = 1; day <= total; day++) {
-    const date = dateKey(new Date(year, month, day));
-    const box = document.createElement("div");
-
-    box.className = "day";
-
-    if (date === dateKey(new Date())) {
-      box.classList.add("today");
-    }
-
-    const number = document.createElement("strong");
-    number.textContent = day;
-    box.appendChild(number);
-
-    tasks.filter(task => task.date === date).forEach(task => {
-      const item = document.createElement("div");
-      item.className = "task";
-      item.style.backgroundColor = task.color || "#7565df";
-      item.textContent = (task.icon || "📝") + " " + task.name;
-      item.title = task.urgency + " urgency";
-      box.appendChild(item);
-    });
-
-    calendar.appendChild(box);
-  }
-
-  showTasks();
+function longDate(k){return parseDate(k).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});}
+function onDate(k){return tasks.filter(t=>t.date===k);}
+function renderCalendar(){
+ $('monthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+ const grid=$('calendarGrid');grid.innerHTML='';
+ const first=new Date(month.getFullYear(),month.getMonth(),1);
+ const start=new Date(first);start.setDate(1-first.getDay());
+ for(let i=0;i<42;i++){
+  const d=new Date(start);d.setDate(start.getDate()+i);const k=keyDate(d),items=onDate(k);
+  const b=document.createElement('button');
+  b.type='button';b.className='day'+(d.getMonth()!==month.getMonth()?' other':'')+(k===keyDate(new Date())?' today':'')+(k===selectedDate?' selected':'');
+  b.setAttribute('aria-label',longDate(k)+', '+items.length+' tasks');
+  b.innerHTML=`<span class="day-number">${d.getDate()}</span><span class="day-count">${items.length?'<i class="dot"></i>'+items.filter(t=>!t.done).length+' left':'&nbsp;'}</span>`;
+  b.addEventListener('click',()=>{selectedDate=k;if(d.getMonth()!==month.getMonth())month=new Date(d.getFullYear(),d.getMonth(),1);render();});
+  grid.appendChild(b);
+ }
+ $('taskCountLabel').textContent=tasks.length+' task'+(tasks.length===1?'':'s')+' total';
 }
-
-function changeMonth(amount) {
-  current.setDate(1);
-  current.setMonth(current.getMonth() + amount);
-  drawCalendar();
+function filteredTasks(){
+ const q=$('searchInput').value.trim().toLowerCase(),today=keyDate(new Date());
+ return tasks.filter(t=>{
+  if(q&&!([t.title,t.notes,t.category,t.priority].some(v=>String(v||'').toLowerCase().includes(q))))return false;
+  if(filter==='day')return t.date===selectedDate;
+  if(filter==='today')return t.date===today;
+  if(filter==='upcoming')return t.date>=today&&!t.done;
+  if(filter==='completed')return t.done;
+  return true;
+ }).sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||'')||Number(a.done)-Number(b.done));
 }
-
-function addTask(event) {
-  event.preventDefault();
-
-  const name = $("taskName").value.trim();
-  const date = $("taskDate").value;
-
-  if (!name || !date) {
-    alert("Enter a task name and date!");
-    return;
-  }
-
-  tasks.push({
-    name: name,
-    date: date,
-    icon: $("taskIcon").value,
-    urgency: $("urgency").value,
-    color: $("taskColor").value
-  });
-
-  save("calendarTasks", tasks);
-
-  $("taskName").value = "";
-  drawCalendar();
+function renderTasks(){
+ const list=$('taskList'),shown=filteredTasks();list.innerHTML='';
+ $('selectedDateTitle').textContent=filter==='day'?'Your day':({all:'All tasks',today:'Today',upcoming:'Upcoming tasks',completed:'Completed tasks'}[filter]);
+ $('selectedDateSubtitle').textContent=filter==='day'?longDate(selectedDate):shown.length+' task'+(shown.length===1?'':'s')+' shown';
+ document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('active',b.dataset.filter===filter));
+ if(!shown.length){
+  const e=document.createElement('div');e.className='empty';
+  e.textContent=$('searchInput').value.trim()?'No tasks match your search.':filter==='day'?'Nothing planned yet. Add a task to get started ✨':'No tasks here yet.';
+  list.appendChild(e);
+ } else shown.forEach(t=>{
+  const el=document.createElement('article');el.className='task'+(t.done?' done':'');
+  const colour=/^#[0-9a-f]{6}$/i.test(t.color||'')?t.color:theme.accent;
+  el.innerHTML=`<input class="task-check" type="checkbox" aria-label="Complete task" ${t.done?'checked':''}>
+  <div class="task-icon" style="background:${colour}20">${esc(t.icon||'✦')}</div>
+  <div class="task-main"><div class="task-title">${esc(t.title)}</div>
+  <div class="task-meta"><span class="pill">${esc(t.category||'Personal')}</span><span class="pill">${esc(t.priority||'Medium')} priority</span><span class="pill">${esc(t.date)}${t.time?' · '+esc(t.time):''}</span></div>
+  ${t.notes?`<div class="task-notes">${esc(t.notes)}</div>`:''}</div>
+  <div><button class="small-btn edit" title="Edit">✎</button><button class="small-btn delete" title="Delete">✕</button></div>`;
+  el.querySelector('.task-check').addEventListener('change',e=>{t.done=e.target.checked;saveTasks();render();});
+  el.querySelector('.edit').addEventListener('click',()=>openTask(t.id));
+  el.querySelector('.delete').addEventListener('click',()=>{if(confirm('Delete "'+t.title+'"?')){tasks=tasks.filter(x=>x.id!==t.id);saveTasks();render();notify('Task deleted');}});
+  list.appendChild(el);
+ });
+ const daily=onDate(selectedDate),done=daily.filter(t=>t.done).length;
+ $('progressText').textContent=done+' of '+daily.length+' complete';
+ $('progressFill').style.width=(daily.length?done/daily.length*100:0)+'%';
 }
-
-function textColour(hex) {
-  const n = parseInt((hex || "#7565df").slice(1), 16);
-  const r = (n >> 16) & 255;
-  const g = (n >> 8) & 255;
-  const b = n & 255;
-
-  return (r * 299 + g * 587 + b * 114) / 1000 > 145
-    ? "#222222" : "#ffffff";
+function render(){applyTheme();renderCalendar();renderTasks();}
+function openTask(id=null,date=selectedDate){
+ const t=id?tasks.find(x=>x.id===id):null;
+ $('taskForm').reset();$('taskDialogTitle').textContent=t?'Edit task':'Add a task';
+ $('taskId').value=t?t.id:'';$('taskTitle').value=t?t.title:'';
+ $('taskDate').value=t?t.date:date;$('taskTime').value=t?t.time||'':'';
+ $('taskCategory').value=t?t.category||'Personal':'Personal';
+ $('taskPriority').value=t?t.priority||'Medium':'Medium';
+ $('taskIcon').value=t?t.icon||'✦':'✦';$('taskColor').value=t?t.color||theme.accent:theme.accent;
+ $('taskNotes').value=t?t.notes||'':'';
+ $('taskDialog').showModal();setTimeout(()=>$('taskTitle').focus(),50);
 }
-
-function showTasks() {
-  const list = $("tasks");
-  const query = $("search").value.toLowerCase().trim();
-
-  list.innerHTML = "";
-
-  const results = tasks
-    .map((task, index) => ({ task, index }))
-    .filter(({ task }) =>
-      task.name.toLowerCase().includes(query) ||
-      task.date.includes(query) ||
-      task.urgency.toLowerCase().includes(query) ||
-      (task.icon || "").includes(query)
-    );
-
-  if (results.length === 0) {
-    list.textContent = query
-      ? "No matching events found."
-      : "No tasks yet. Add one above!";
-    return;
-  }
-
-  results.forEach(({ task, index }) => {
-    const item = document.createElement("div");
-    item.className = "taskItem";
-    item.style.backgroundColor = task.color || "#7565df";
-    item.style.color = textColour(task.color || "#7565df");
-
-    const details = document.createElement("span");
-
-    details.textContent =
-      (task.icon || "📝") + " " + task.name +
-      " | " + task.date +
-      " | " + task.urgency + " urgency ";
-
-    item.appendChild(details);
-
-    const colour = document.createElement("input");
-    colour.type = "color";
-    colour.value = task.color || "#7565df";
-    colour.title = "Change task colour";
-
-    colour.addEventListener("input", function() {
-      tasks[index].color = colour.value;
-      item.style.backgroundColor = colour.value;
-      item.style.color = textColour(colour.value);
-      save("calendarTasks", tasks);
-      drawCalendar();
-    });
-
-    item.appendChild(colour);
-
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.textContent = "Delete";
-
-    remove.addEventListener("click", function() {
-      tasks.splice(index, 1);
-      save("calendarTasks", tasks);
-      drawCalendar();
-    });
-
-    item.appendChild(remove);
-    list.appendChild(item);
-  });
-}
-
-function applyTheme(t) {
-  $("bgColor").value = t.bg || "#f4f3fa";
-  $("textColor").value = t.text || "#29263a";
-  $("accentColor").value = t.accent || "#7565df";
-  $("wallpaper").value = t.wallpaper || "";
-
-  document.documentElement.style.setProperty(
-    "--bg", t.bg || "#f4f3fa"
-  );
-
-  document.documentElement.style.setProperty(
-    "--text", t.text || "#29263a"
-  );
-
-  document.documentElement.style.setProperty(
-    "--accent", t.accent || "#7565df"
-  );
-
-  document.body.style.backgroundImage = t.wallpaper
-    ? "url('" + t.wallpaper.replace(/['"\\]/g, "") + "')"
-    : "none";
-}
-
-function saveTheme() {
-  theme = {
-    bg: $("bgColor").value,
-    text: $("textColor").value,
-    accent: $("accentColor").value,
-    wallpaper: $("wallpaper").value.trim()
-  };
-
-  save("calendarTheme", theme);
-  applyTheme(theme);
-}
-
-function resetTheme() {
-  theme = {
-    bg: "#f4f3fa",
-    text: "#29263a",
-    accent: "#7565df",
-    wallpaper: ""
-  };
-
-  save("calendarTheme", theme);
-  applyTheme(theme);
-}
-
-$("studioButton").addEventListener("click", function() {
-  $("studio").style.display =
-    $("studio").style.display === "block" ? "none" : "block";
+$('taskForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const id=$('taskId').value||(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
+ const old=tasks.find(t=>t.id===id);
+ const item={id,title:$('taskTitle').value.trim(),date:$('taskDate').value,time:$('taskTime').value,
+ category:$('taskCategory').value,priority:$('taskPriority').value,icon:$('taskIcon').value.trim()||'✦',
+ color:$('taskColor').value,notes:$('taskNotes').value.trim(),done:old?old.done:false};
+ if(!item.title||!item.date)return;
+ tasks=old?tasks.map(t=>t.id===id?item:t):[...tasks,item];
+ selectedDate=item.date;const d=parseDate(item.date);month=new Date(d.getFullYear(),d.getMonth(),1);
+ filter='day';saveTasks();$('taskDialog').close();render();notify(old?'Task updated':'Task added');
 });
+$('addTaskBtn').onclick=()=>openTask();
+$('addSelectedBtn').onclick=()=>openTask(null,selectedDate);
+$('todayBtn').onclick=()=>{selectedDate=keyDate(new Date());month=new Date(now.getFullYear(),now.getMonth(),1);filter='day';render();};
+$('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar();};
+$('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar();};
+$('searchInput').addEventListener('input',renderTasks);
+$('filters').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(b){filter=b.dataset.filter;renderTasks();}});
+$('closeTaskDialog').onclick=()=>$('taskDialog').close();
+$('cancelTaskBtn').onclick=()=>$('taskDialog').close();
+$('clearCompletedBtn').onclick=()=>{
+ const n=tasks.filter(t=>t.done).length;
+ if(!n){notify('No completed tasks to clear');return;}
+ if(confirm('Delete all '+n+' completed tasks?')){tasks=tasks.filter(t=>!t.done);saveTasks();render();notify('Completed tasks cleared');}
+};
 
-$("saveTheme").addEventListener("click", saveTheme);
-$("resetTheme").addEventListener("click", resetTheme);
-
-$("previous").addEventListener("click", function() {
-  changeMonth(-1);
-});
-
-$("next").addEventListener("click", function() {
-  changeMonth(1);
-});
-
-$("taskForm").addEventListener("submit", addTask);
-
-$("search").addEventListener("input", showTasks);
-
-if (theme) {
-  applyTheme(theme);
+const settingMap={
+ settingTitle:'title',settingSubtitle:'subtitle',settingLogo:'logo',settingFont:'font',
+ settingBg:'bg',settingCard:'card',settingText:'text',settingMuted:'muted',
+ settingAccent:'accent',settingBorder:'border',settingRadius:'radius',
+ settingWallpaper:'wallpaper',settingOverlay:'overlay',settingShadow:'shadow'
+};
+function fillSettings(){
+ for(const [id,key] of Object.entries(settingMap)){
+  if(key==='shadow')$(id).checked=!!theme[key];
+  else $(id).value=theme[key]??defaults[key];
+ }
+ $('radiusValue').textContent=theme.radius+'px';$('overlayValue').textContent=theme.overlay+'%';
 }
+function readSettings(){
+ for(const [id,key] of Object.entries(settingMap)){
+  if(key==='shadow')theme[key]=$(id).checked;
+  else if(key==='radius'||key==='overlay')theme[key]=Number($(id).value);
+  else theme[key]=$(id).value;
+ }
+ if(theme.wallpaper&&!/^https?:\/\//i.test(theme.wallpaper.trim())){
+  notify('Wallpaper URL must start with http:// or https://');return false;
+ }
+ saveTheme();render();return true;
+}
+function showSettings(){fillSettings();$('settingsDialog').showModal();}
+$('settingsBtn').onclick=showSettings;
+$('openFullSettings').onclick=showSettings;
+$('closeSettingsDialog').onclick=()=>$('settingsDialog').close();
+$('saveSettingsBtn').onclick=()=>{if(readSettings()){$('settingsDialog').close();notify('Customisation saved');}};
+$('settingRadius').oninput=()=>$('radiusValue').textContent=$('settingRadius').value+'px';
+$('settingOverlay').oninput=()=>$('overlayValue').textContent=$('settingOverlay').value+'%';
+$('quickAccent').oninput=e=>{theme.accent=e.target.value;saveTheme();render();};
+$('quickBg').oninput=e=>{theme.bg=e.target.value;saveTheme();render();};
+$('quickWallpaper').onchange=e=>{
+ const v=e.target.value.trim();
+ if(v&&!/^https?:\/\//i.test(v)){notify('Use a wallpaper URL beginning with https://');e.target.value=theme.wallpaper;return;}
+ theme.wallpaper=v;saveTheme();render();
+};
+function resetTheme(){
+ if(confirm('Reset all appearance settings to the default design?')){
+  theme={...defaults};saveTheme();fillSettings();render();notify('Appearance reset');
+ }
+}
+$('resetThemeBtn').onclick=resetTheme;
+$('resetAllSettingsBtn').onclick=resetTheme;
 
-drawCalendar();
+function download(name,content,type){
+ const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+$('exportBtn').onclick=()=>{
+ download('daylight-planner-backup.json',JSON.stringify({version:1,tasks,theme},null,2),'application/json');
+ notify('Backup exported');
+};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  const data=JSON.parse(await file.text());
+  if(!data||!Array.isArray(data.tasks)||!data.theme||typeof data.theme!=='object')throw Error('Invalid backup');
+  if(!confirm('Import this backup? It will replace current tasks and appearance.'))return;
+  tasks=data.tasks.filter(t=>t&&t.title&&t.date).map((t,i)=>({...t,id:String(t.id||Date.now()+i)}));
+  theme={...defaults,...data.theme};saveTasks();saveTheme();render();fillSettings();notify('Backup imported');
+ }catch(err){notify('Could not import that backup file');}
+ finally{e.target.value='';}
+};
+$('exportCsvBtn').onclick=()=>{
+ const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ const rows=[['Title','Date','Time','Category','Priority','Icon','Colour','Notes','Completed'],
+ ...tasks.map(t=>[t.title,t.date,t.time,t.category,t.priority,t.icon,t.color,t.notes,t.done?'Yes':'No'])];
+ download('daylight-planner-tasks.csv',rows.map(r=>r.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8;');
+ notify('Tasks exported');
+};
+render();
+})();
 </script>
-
 </body>
 </html>
